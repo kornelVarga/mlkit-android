@@ -48,7 +48,7 @@ class SceneClassificationActivity : AppCompatActivity() {
 
     private lateinit var interpreter: FirebaseModelInterpreter
     private val intValues = IntArray(IMG_SIZE_X * IMG_SIZE_Y)
-    private val labels = arrayOf("buildings", "forest", "glacier", "mountain", "sea", "street")
+    private val labels = arrayOf("Buildings", "Forest", "Glacier", "Mountain", "Sea", "Street")
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -129,7 +129,6 @@ class SceneClassificationActivity : AppCompatActivity() {
 
         interpreter.run(inputs, inputOutputOptions)
             .addOnSuccessListener { result ->
-
                 val output = result.getOutput<Array<FloatArray>>(0)
 
                 for ((i, o) in output[0].withIndex()) {
@@ -150,7 +149,8 @@ class SceneClassificationActivity : AppCompatActivity() {
 
     private fun convertBitmapToByteBuffer(bitmap: Bitmap?): ByteBuffer {
         //Clear the Bytebuffer for a new image
-        val imgData = ByteBuffer.allocateDirect(BYTES_PER_CHANNEL * BATCH_SIZE * IMG_SIZE_X * IMG_SIZE_Y * PIXEL_SIZE)
+        val imgData =
+            ByteBuffer.allocateDirect(BYTES_PER_CHANNEL * BATCH_SIZE * IMG_SIZE_X * IMG_SIZE_Y * PIXEL_SIZE)
         imgData.order(ByteOrder.nativeOrder())
         bitmap?.getPixels(intValues, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
         // Convert the image to floating point.
