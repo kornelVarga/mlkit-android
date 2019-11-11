@@ -68,8 +68,8 @@ class SceneClassificationActivity : AppCompatActivity() {
             Log.d("asdf", "img uri: $imageUri")
             img_original.setImageURI(imageUri)
 
-            val bitmap = img_original.drawable.toBitmap()
-            downloadModel(bitmap)
+            //val bitmap = img_original.drawable.toBitmap()
+            downloadModel()
         }
 
         btn_choose_image.setOnClickListener {
@@ -99,7 +99,7 @@ class SceneClassificationActivity : AppCompatActivity() {
 
     }
 
-    private fun downloadModel(bitmap: Bitmap) {
+    private fun downloadModel() {
         val conditions = FirebaseModelDownloadConditions.Builder()
             .requireWifi()
             .build()
@@ -109,20 +109,23 @@ class SceneClassificationActivity : AppCompatActivity() {
                 val options = FirebaseModelInterpreterOptions.Builder(remoteModel).build()
                 initializeInterpreter(options)
             }.continueWith {
-                recogniseImage(bitmap)
+                recogniseImage(img_original.drawable.toBitmap())
             }
             .addOnFailureListener { ex ->
                 Log.d("asdf", "error while downloading model: ${ex.message}")
                 Log.d("asdf", "Using local model")
-                val options = FirebaseModelInterpreterOptions.Builder(localModel).build()
+                val options = FirebaseModelInterpreterOptions
+                    .Builder(localModel).build()
                 initializeInterpreter(options)
+            }.continueWith {
+                recogniseImage(img_original.drawable.toBitmap())
             }
     }
 
     private fun recogniseImage(bitmap: Bitmap) {
         val predictions = mutableListOf<Prediction>()
 
-        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, IMG_SIZE_X, IMG_SIZE_Y, true)
 
         val input: ByteBuffer = convertBitmapToByteBuffer(scaledBitmap)
         val inputs = FirebaseModelInputs.Builder().add(input).build()
@@ -131,8 +134,8 @@ class SceneClassificationActivity : AppCompatActivity() {
             .addOnSuccessListener { result ->
                 val output = result.getOutput<Array<FloatArray>>(0)
 
-                for ((i, o) in output[0].withIndex()) {
-                    val prediction = Prediction(labels[i], o)
+                for ((i, prob) in output[0].withIndex()) {
+                    val prediction = Prediction(labels[i], prob)
                     predictions.add(prediction)
                 }
 
@@ -167,9 +170,7 @@ class SceneClassificationActivity : AppCompatActivity() {
     }
 
     private fun getTopLabels(predictions: MutableList<Prediction>) {
-        predictions.sortBy { it.probability }
-        predictions.reverse()
-
+        predictions.sortByDescending { it.probability }
         val topThree = predictions.take(3)
         chart.setPredictions(topThree as ArrayList<Prediction>)
     }
